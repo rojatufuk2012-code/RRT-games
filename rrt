@@ -3,46 +3,44 @@
 let player = 0;
 let cpu = 0;
 
-/* BOSS */
+/* BOSS GAME */
 let bossHp = 50;
 let playerHp = 30;
 
-/* MENU */
+/* ========== MENU ========== */
 function startDice(){
-  document.getElementById("menu").style.display="none";
+  hideAll();
   document.getElementById("diceGame").style.display="block";
-  document.getElementById("reactionGame").style.display="none";
-  document.getElementById("bossGame").style.display="none";
 }
 
 function startReaction(){
-  document.getElementById("menu").style.display="none";
-  document.getElementById("diceGame").style.display="none";
+  hideAll();
   document.getElementById("reactionGame").style.display="block";
-  document.getElementById("bossGame").style.display="none";
 }
 
 function startBoss(){
-  document.getElementById("menu").style.display="none";
-  document.getElementById("diceGame").style.display="none";
-  document.getElementById("reactionGame").style.display="none";
+  hideAll();
   document.getElementById("bossGame").style.display="block";
-
   resetBoss();
 }
 
 function backMenu(){
+  hideAll();
   document.getElementById("menu").style.display="block";
+}
+
+function hideAll(){
+  document.getElementById("menu").style.display="none";
   document.getElementById("diceGame").style.display="none";
   document.getElementById("reactionGame").style.display="none";
   document.getElementById("bossGame").style.display="none";
 }
 
-/* DICE GAME */
+/* ========== DICE GAME ========== */
 function rollDice(){
 
-  let d1 = Math.floor(Math.random()*6)+1;
-  let d2 = Math.floor(Math.random()*6)+1;
+  const d1 = Math.floor(Math.random()*6)+1;
+  const d2 = Math.floor(Math.random()*6)+1;
 
   player += d1;
   cpu += d2;
@@ -73,8 +71,9 @@ function resetDice(){
   document.getElementById("score").innerText = "Score: 0 | 0";
 }
 
-/* REACTION GAME */
-let startTime;
+/* ========== REACTION GAME ========== */
+
+let startTime = 0;
 let reactionActive = false;
 
 function startReactionTest(){
@@ -83,38 +82,35 @@ function startReactionTest(){
 
   reactionActive = true;
 
-  let text = document.getElementById("reactionText");
+  const text = document.getElementById("reactionText");
   text.innerText = "Warte auf GRÜN...";
 
-  let delay = Math.random()*3000 + 2000;
+  const delay = Math.random()*3000 + 2000;
 
-  setTimeout(()=>{
+  setTimeout(() => {
 
     text.innerText = "JETZT KLICKEN!";
     startTime = Date.now();
 
-    document.addEventListener("click", handleReaction);
-
   }, delay);
 }
 
-function handleReaction(){
+/* Besser: nur Button statt globalem Klick */
+function handleReactionClick(){
 
-  if(!startTime) return;
+  if(!reactionActive || startTime === 0) return;
 
-  let reaction = Date.now() - startTime;
+  const reaction = Date.now() - startTime;
 
-  alert("Deine Zeit: " + reaction + " ms");
+  document.getElementById("reactionText").innerText =
+    "Zeit: " + reaction + " ms";
 
-  document.removeEventListener("click", handleReaction);
-
-  document.getElementById("reactionText").innerText = "Warte auf Grün...";
-
-  startTime = null;
+  startTime = 0;
   reactionActive = false;
 }
 
-/* BOSS GAME */
+/* ========== BOSS GAME ========== */
+
 function resetBoss(){
   bossHp = 50;
   playerHp = 30;
@@ -132,8 +128,8 @@ function attackBoss(){
 
   if(bossHp <= 0 || playerHp <= 0) return;
 
-  let playerDmg = Math.floor(Math.random()*6)+1;
-  let bossDmg = Math.floor(Math.random()*5)+1;
+  const playerDmg = Math.floor(Math.random()*6)+1;
+  const bossDmg = Math.floor(Math.random()*5)+1;
 
   bossHp -= playerDmg;
   playerHp -= bossDmg;
@@ -141,7 +137,7 @@ function attackBoss(){
   updateBossUI();
 
   document.getElementById("bossText").innerText =
-    "Du machst " + playerDmg + " Schaden | Boss macht " + bossDmg;
+    `Du: -${playerDmg} | Boss: -${bossDmg}`;
 
   checkBoss();
 }
@@ -149,13 +145,13 @@ function attackBoss(){
 function checkBoss(){
 
   if(bossHp <= 0){
-    alert("DU HAST DEN BOSS BESIEGT!");
+    alert("BOSS BESIEGT!");
     resetBoss();
     backMenu();
   }
 
   if(playerHp <= 0){
-    alert("DU WURDEST BESIEGT!");
+    alert("DU VERLOREN!");
     resetBoss();
     backMenu();
   }
