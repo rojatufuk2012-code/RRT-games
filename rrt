@@ -1,42 +1,103 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>RRT-GAMES</title>
+
+<style>
+  body {
+    font-family: Arial;
+    text-align: center;
+    background: #111;
+    color: white;
+  }
+
+  button {
+    padding: 10px 15px;
+    margin: 5px;
+    cursor: pointer;
+  }
+
+  .game {
+    display: none;
+    margin-top: 20px;
+  }
+</style>
+
+</head>
+
+<body>
+
+<!-- MENU -->
+<div id="menu">
+  <h1>RRT-GAMES</h1>
+
+  <button onclick="startDice()">Dice Game</button>
+  <button onclick="startReaction()">Reaction Game</button>
+  <button onclick="startBoss()">Boss Game</button>
+</div>
+
+<!-- DICE GAME -->
+<div id="diceGame" class="game">
+  <h2>Dice Game</h2>
+
+  <p id="d1">-</p>
+  <p id="d2">-</p>
+  <p id="score">Score: 0 | 0</p>
+
+  <button onclick="rollDice()">Roll Dice</button>
+  <button onclick="backMenu()">Back</button>
+</div>
+
+<!-- REACTION GAME -->
+<div id="reactionGame" class="game">
+  <h2>Reaction Game</h2>
+
+  <p id="reactionText">Drücke Start</p>
+
+  <button onclick="startReactionTest()">Start</button>
+  <button onclick="handleReactionClick()">CLICK</button>
+  <button onclick="backMenu()">Back</button>
+</div>
+
+<!-- BOSS GAME -->
+<div id="bossGame" class="game">
+  <h2>Boss Fight</h2>
+
+  <p id="bossText">Der Boss erscheint...</p>
+  <p id="bossHp">Boss HP: 50</p>
+  <p id="playerHp">Deine HP: 30</p>
+
+  <button onclick="attackBoss()">Attack</button>
+  <button onclick="backMenu()">Back</button>
+</div>
+
 <script>
 
 let player = 0;
 let cpu = 0;
 
-/* BOSS GAME */
 let bossHp = 50;
 let playerHp = 30;
 
-/* ========== MENU ========== */
-function startDice(){
-  hideAll();
-  document.getElementById("diceGame").style.display="block";
-}
-
-function startReaction(){
-  hideAll();
-  document.getElementById("reactionGame").style.display="block";
-}
-
-function startBoss(){
-  hideAll();
-  document.getElementById("bossGame").style.display="block";
-  resetBoss();
+/* MENU */
+function showGame(id){
+  document.getElementById("menu").style.display = "none";
+  document.querySelectorAll(".game").forEach(g => g.style.display = "none");
+  document.getElementById(id).style.display = "block";
 }
 
 function backMenu(){
-  hideAll();
-  document.getElementById("menu").style.display="block";
+  document.querySelectorAll(".game").forEach(g => g.style.display = "none");
+  document.getElementById("menu").style.display = "block";
 }
 
-function hideAll(){
-  document.getElementById("menu").style.display="none";
-  document.getElementById("diceGame").style.display="none";
-  document.getElementById("reactionGame").style.display="none";
-  document.getElementById("bossGame").style.display="none";
-}
+/* STARTS */
+function startDice(){ showGame("diceGame"); }
+function startReaction(){ showGame("reactionGame"); }
+function startBoss(){ showGame("bossGame"); resetBoss(); }
 
-/* ========== DICE GAME ========== */
+/* DICE */
 function rollDice(){
 
   const d1 = Math.floor(Math.random()*6)+1;
@@ -71,8 +132,7 @@ function resetDice(){
   document.getElementById("score").innerText = "Score: 0 | 0";
 }
 
-/* ========== REACTION GAME ========== */
-
+/* REACTION */
 let startTime = 0;
 let reactionActive = false;
 
@@ -82,20 +142,18 @@ function startReactionTest(){
 
   reactionActive = true;
 
-  const text = document.getElementById("reactionText");
-  text.innerText = "Warte auf GRÜN...";
+  document.getElementById("reactionText").innerText =
+    "Warte auf GRÜN...";
 
   const delay = Math.random()*3000 + 2000;
 
   setTimeout(() => {
-
-    text.innerText = "JETZT KLICKEN!";
+    document.getElementById("reactionText").innerText =
+      "JETZT KLICKEN!";
     startTime = Date.now();
-
   }, delay);
 }
 
-/* Besser: nur Button statt globalem Klick */
 function handleReactionClick(){
 
   if(!reactionActive || startTime === 0) return;
@@ -109,12 +167,10 @@ function handleReactionClick(){
   reactionActive = false;
 }
 
-/* ========== BOSS GAME ========== */
-
+/* BOSS */
 function resetBoss(){
   bossHp = 50;
   playerHp = 30;
-
   updateBossUI();
   document.getElementById("bossText").innerText = "Der Boss erscheint...";
 }
@@ -137,7 +193,7 @@ function attackBoss(){
   updateBossUI();
 
   document.getElementById("bossText").innerText =
-    `Du: -${playerDmg} | Boss: -${bossDmg}`;
+    "Du: -" + playerDmg + " | Boss: -" + bossDmg;
 
   checkBoss();
 }
@@ -145,7 +201,7 @@ function attackBoss(){
 function checkBoss(){
 
   if(bossHp <= 0){
-    alert("BOSS BESIEGT!");
+    alert("DU HAST GEWONNEN!");
     resetBoss();
     backMenu();
   }
@@ -158,3 +214,6 @@ function checkBoss(){
 }
 
 </script>
+
+</body>
+</html>
