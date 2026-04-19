@@ -2,268 +2,279 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>RRT-GAMES</title>
+<title>RRT ARCADE</title>
 
 <style>
-  body {
-    font-family: Arial;
-    text-align: center;
-    background: #111;
-    color: white;
-  }
+body{
+margin:0;
+font-family:Arial;
+background:black;
+color:#39ff14;
+text-align:center;
+}
 
-  button {
-    padding: 12px 18px;
-    margin: 6px;
-    cursor: pointer;
-    border: none;
-    border-radius: 8px;
-    background: #333;
-    color: white;
-    transition: 0.2s;
-  }
+.neon{
+font-size:55px;
+margin-top:15px;
+text-shadow:0 0 10px #39ff14,0 0 25px #39ff14;
+}
 
-  button:hover {
-    background: #00ff88;
-    color: black;
-  }
+button{
+padding:10px 14px;
+margin:6px;
+border-radius:10px;
+cursor:pointer;
+background:black;
+color:#39ff14;
+border:2px solid #39ff14;
+}
 
-  .game {
-    display: none;
-    margin-top: 20px;
-    opacity: 0;
-    transition: 0.3s;
-  }
+button:hover{
+background:#39ff14;
+color:black;
+}
+
+.screen{display:none;}
+.active{display:block;margin-top:15px;}
+
+.win{font-size:22px;margin:10px;}
+
+/* ADULT STYLE */
+.adult{
+color:gold;
+}
+
+.adult button{
+border:2px solid gold;
+color:gold;
+box-shadow:0 0 12px gold;
+}
+
+.adult .neon{
+text-shadow:0 0 25px gold;
+}
 </style>
-
 </head>
 
 <body>
 
+<div class="neon">RRT ARCADE</div>
+
+<!-- START -->
+<div id="start" class="screen active">
+<h2>MODE WÄHLEN</h2>
+<button onclick="enter('kids')">🟢 KIDS MODE</button>
+<button onclick="enter('adult')">🔥 ADULT MODE</button>
+</div>
+
 <!-- MENU -->
-<div id="menu">
-  <h1>RRT-GAMES</h1>
+<div id="menu" class="screen">
+<h2 id="title"></h2>
 
-  <p>Highscore (Survival Wave): <span id="hs">0</span></p>
+<div id="games"></div>
 
-  <button onclick="startDice()">Dice Game</button>
-  <button onclick="startReaction()">Reaction Game</button>
-  <button onclick="startBoss()">Boss Game</button>
-  <button onclick="startSurvival()">Survival Mode</button>
+<br>
+<button onclick="backStart()">EXIT</button>
 </div>
 
-<!-- DICE -->
-<div id="diceGame" class="game">
-  <h2>Dice Game</h2>
+<!-- GAME -->
+<div id="game" class="screen">
+<h2 id="gtitle"></h2>
 
-  <p id="d1">-</p>
-  <p id="d2">-</p>
-  <p id="score">Score: 0 | 0</p>
+<div class="win" id="gout">READY</div>
 
-  <button onclick="rollDice()">Roll Dice</button>
-  <button onclick="backMenu()">Back</button>
-</div>
+<input id="inp" style="display:none">
 
-<!-- REACTION -->
-<div id="reactionGame" class="game">
-  <h2>Reaction Game</h2>
-
-  <p id="reactionText">Drücke Start</p>
-
-  <button onclick="startReactionTest()">Start</button>
-  <button onclick="handleReactionClick()">CLICK</button>
-  <button onclick="backMenu()">Back</button>
-</div>
-
-<!-- BOSS -->
-<div id="bossGame" class="game">
-  <h2>Boss Fight</h2>
-
-  <p id="bossText">Fight!</p>
-  <p id="bossHp">Boss HP: 0</p>
-  <p id="playerHp">Deine HP: 0</p>
-
-  <!-- HP BARS -->
-  <div style="width:200px;height:15px;background:#333;margin:5px auto;">
-    <div id="bossBar" style="height:100%;background:red;width:100%"></div>
-  </div>
-
-  <div style="width:200px;height:15px;background:#333;margin:5px auto;">
-    <div id="playerBar" style="height:100%;background:lime;width:100%"></div>
-  </div>
-
-  <button onclick="attackBoss()">Attack</button>
-  <button onclick="backMenu()">Back</button>
+<br>
+<button onclick="startGame()">START</button>
+<button onclick="back()">BACK</button>
 </div>
 
 <script>
 
-/* HIGH SCORE */
-let highscore = localStorage.getItem("highscore") || 0;
-document.getElementById("hs").innerText = highscore;
+let mode="";
+let current="";
+let secret=0;
 
-/* DICE */
-let player = 0;
-let cpu = 0;
+/* MODE */
+function enter(m){
+mode=m;
 
-/* BOSS / SURVIVAL */
-let bossHp = 50;
-let playerHp = 30;
-let level = 1;
-let wave = 1;
+document.body.className = (m==="adult")?"adult":"";
 
-/* REACTION */
-let startTime = 0;
-let reactionActive = false;
+document.getElementById("start").classList.remove("active");
+document.getElementById("menu").classList.add("active");
 
-/* MENU */
-function showGame(id){
-  document.getElementById("menu").style.display = "none";
-  document.querySelectorAll(".game").forEach(g => g.style.display = "none");
+document.getElementById("title").innerText=
+m==="kids"?"🟢 KIDS MODE":"🔥 ADULT MODE";
 
-  const game = document.getElementById(id);
-  game.style.display = "block";
-
-  setTimeout(() => {
-    game.style.opacity = 1;
-  }, 50);
+loadGames();
 }
 
-function backMenu(){
-  document.querySelectorAll(".game").forEach(g => {
-    g.style.display = "none";
-    g.style.opacity = 0;
-  });
+/* GAMES */
+function loadGames(){
 
-  document.getElementById("menu").style.display = "block";
+let g=document.getElementById("games");
+g.innerHTML="";
+
+if(mode==="kids"){
+g.innerHTML=`
+<button onclick="openGame('dice')">Dice</button>
+<button onclick="openGame('guess')">Guess</button>
+<button onclick="openGame('memory')">Memory</button>
+<button onclick="openGame('click')">Click</button>
+<button onclick="openGame('color')">Color</button>
+<button onclick="openGame('reaction')">Reaction</button>
+`;
+}
+
+if(mode==="adult"){
+g.innerHTML=`
+<button onclick="openGame('dice')">Dice Battle</button>
+<button onclick="openGame('slot')">Slot</button>
+<button onclick="openGame('highlow')">HighLow</button>
+<button onclick="openGame('memory')">Memory+</button>
+<button onclick="openGame('click')">Speed Click</button>
+<button onclick="openGame('reaction')">Reaction Pro</button>
+<button onclick="openGame('color')">Color Rush</button>
+`;
+}
+}
+
+/* OPEN GAME */
+function openGame(g){
+current=g;
+
+document.getElementById("menu").classList.remove("active");
+document.getElementById("game").classList.add("active");
+
+document.getElementById("gtitle").innerText=g.toUpperCase();
+document.getElementById("gout").innerText="READY";
+
+document.getElementById("inp").style.display="none";
+
+if(g==="guess"){
+document.getElementById("inp").style.display="inline-block";
+resetGuess();
+}
+}
+
+/* BACK */
+function back(){
+document.getElementById("game").classList.remove("active");
+document.getElementById("menu").classList.add("active");
+}
+
+function backStart(){
+document.getElementById("menu").classList.remove("active");
+document.getElementById("start").classList.add("active");
 }
 
 /* START */
-function startDice(){ showGame("diceGame"); }
-function startReaction(){ showGame("reactionGame"); }
-function startBoss(){ showGame("bossGame"); startWave(); }
-function startSurvival(){ showGame("bossGame"); wave = 1; startWave(); }
+function startGame(){
 
-/* DICE */
-function rollDice(){
-  const d1 = Math.floor(Math.random()*6)+1;
-  const d2 = Math.floor(Math.random()*6)+1;
-
-  player += d1;
-  cpu += d2;
-
-  document.getElementById("d1").innerText = "DU: " + d1;
-  document.getElementById("d2").innerText = "CPU: " + d2;
-
-  document.getElementById("score").innerText =
-    "Score: " + player + " | " + cpu;
-
-  if(player >= 20){
-    alert("DU GEWINNST!");
-    resetDice();
-  }
-
-  if(cpu >= 20){
-    alert("CPU GEWINNT!");
-    resetDice();
-  }
+if(current==="dice") dice();
+if(current==="slot") slot();
+if(current==="guess") guess();
+if(current==="memory") memory();
+if(current==="click") click();
+if(current==="reaction") reaction();
+if(current==="color") color();
+if(current==="highlow") highlow();
 }
 
-function resetDice(){
-  player = 0;
-  cpu = 0;
-  document.getElementById("score").innerText = "Score: 0 | 0";
+/* DICE */
+let p=0,b=0;
+
+function dice(){
+p+=Math.floor(Math.random()*6)+1;
+b+=Math.floor(Math.random()*6)+1;
+
+document.getElementById("gout").innerText="YOU:"+p+" BOT:"+b;
+
+if(p>=20&&p>b)document.getElementById("gout").innerText="YOU WIN";
+if(b>=20&&b>p)document.getElementById("gout").innerText="YOU LOSE";
+}
+
+/* SLOT */
+function slot(){
+
+let s=["7","🍒","⭐","💎"];
+
+let a=s[Math.random()*4|0];
+let b=s[Math.random()*4|0];
+let c=s[Math.random()*4|0];
+
+document.getElementById("gout").innerText=a+" "+b+" "+c;
+
+if(a===b&&b===c){
+document.getElementById("gout").innerText="JACKPOT";
+}else if(a===b||b===c||a===c){
+document.getElementById("gout").innerText="WIN";
+}else{
+document.getElementById("gout").innerText="LOSE";
+}
+}
+
+/* GUESS FIX */
+function resetGuess(){
+secret = mode==="adult"
+?Math.floor(Math.random()*100)+1
+:Math.floor(Math.random()*10)+1;
+}
+
+function guess(){
+let v=Number(document.getElementById("inp").value);
+
+if(!v)return;
+
+if(v===secret){
+document.getElementById("gout").innerText="CORRECT";
+resetGuess();
+}else{
+document.getElementById("gout").innerText=
+v>secret?"TOO HIGH":"TOO LOW";
+}
+}
+
+/* MEMORY */
+function memory(){
+let n=Math.floor(Math.random()*900)+100;
+
+document.getElementById("gout").innerText=n;
+
+setTimeout(()=>{
+document.getElementById("gout").innerText="???";
+},1000);
+}
+
+/* CLICK */
+let clicks=0;
+
+function click(){
+clicks++;
+document.getElementById("gout").innerText="Clicks: "+clicks;
 }
 
 /* REACTION */
-function startReactionTest(){
-  if(reactionActive) return;
+function reaction(){
+document.getElementById("gout").innerText="WAIT...";
 
-  reactionActive = true;
-  startTime = 0;
-
-  document.getElementById("reactionText").innerText = "Warte...";
-
-  const delay = Math.random()*3000 + 2000;
-
-  setTimeout(() => {
-    if(!reactionActive) return;
-
-    document.getElementById("reactionText").innerText = "JETZT!";
-    startTime = Date.now();
-  }, delay);
+setTimeout(()=>{
+document.getElementById("gout").innerText="CLICK!";
+},900);
 }
 
-function handleReactionClick(){
-
-  if(!reactionActive){
-    document.getElementById("reactionText").innerText = "Zu früh!";
-    return;
-  }
-
-  if(startTime === 0) return;
-
-  const reaction = Date.now() - startTime;
-
-  document.getElementById("reactionText").innerText =
-    "Zeit: " + reaction + " ms";
-
-  reactionActive = false;
-  startTime = 0;
+/* COLOR */
+function color(){
+document.getElementById("gout").innerText=
+["red","green","blue","yellow"][Math.random()*4|0];
 }
 
-/* SURVIVAL / BOSS */
-function startWave(){
-  bossHp = 40 + wave * 15;
-  playerHp = 30;
-
-  document.getElementById("bossText").innerText =
-    "WAVE " + wave;
-
-  updateUI();
-}
-
-function attackBoss(){
-
-  const crit = Math.random() < 0.2 ? 2 : 1;
-  const playerDmg = (Math.floor(Math.random()*6)+1) * crit;
-  const bossDmg = Math.floor(Math.random()*5)+1;
-
-  bossHp -= playerDmg;
-  playerHp -= bossDmg;
-
-  updateUI();
-
-  if(bossHp <= 0){
-    wave++;
-
-    if(wave > highscore){
-      highscore = wave;
-      localStorage.setItem("highscore", highscore);
-      document.getElementById("hs").innerText = highscore;
-    }
-
-    setTimeout(startWave, 700);
-  }
-
-  if(playerHp <= 0){
-    alert("VERLOREN!");
-    backMenu();
-  }
-}
-
-function updateUI(){
-
-  document.getElementById("bossHp").innerText = "Boss HP: " + bossHp;
-  document.getElementById("playerHp").innerText = "Deine HP: " + playerHp;
-
-  let bossMax = 40 + wave * 15;
-
-  document.getElementById("bossBar").style.width =
-    (bossHp / bossMax) * 100 + "%";
-
-  document.getElementById("playerBar").style.width =
-    (playerHp / 30) * 100 + "%";
+/* HIGHLOW */
+function highlow(){
+let n=Math.floor(Math.random()*100);
+document.getElementById("gout").innerText="VS "+n;
 }
 
 </script>
