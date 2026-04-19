@@ -2,279 +2,271 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>RRT ARCADE</title>
+<title>RRT-GAMES</title>
 
 <style>
 body{
-margin:0;
-font-family:Arial;
-background:black;
-color:#39ff14;
-text-align:center;
+    margin:0;
+    font-family:Arial;
+    background:black;
+    color:#39ff14;
+    text-align:center;
 }
 
 .neon{
-font-size:55px;
-margin-top:15px;
-text-shadow:0 0 10px #39ff14,0 0 25px #39ff14;
+    font-size:55px;
+    margin-top:20px;
+    text-shadow:0 0 10px #39ff14,0 0 25px #39ff14;
 }
 
 button{
-padding:10px 14px;
-margin:6px;
-border-radius:10px;
-cursor:pointer;
-background:black;
-color:#39ff14;
-border:2px solid #39ff14;
+    padding:10px 16px;
+    margin:6px;
+    border:2px solid #39ff14;
+    background:black;
+    color:#39ff14;
+    border-radius:10px;
+    cursor:pointer;
+    box-shadow:0 0 10px #39ff14;
 }
 
 button:hover{
-background:#39ff14;
-color:black;
+    background:#39ff14;
+    color:black;
 }
 
-.screen{display:none;}
-.active{display:block;margin-top:15px;}
+.screen{display:none;margin-top:15px;}
+.active{display:block;}
 
-.win{font-size:22px;margin:10px;}
-
-/* ADULT STYLE */
-.adult{
-color:gold;
+.win{
+    font-size:30px;
+    min-height:40px;
 }
 
-.adult button{
-border:2px solid gold;
-color:gold;
-box-shadow:0 0 12px gold;
-}
+.click{font-size:18px;margin:10px;}
 
-.adult .neon{
-text-shadow:0 0 25px gold;
-}
+.row{display:flex;justify-content:center;gap:10px;}
 </style>
 </head>
 
 <body>
 
-<div class="neon">RRT ARCADE</div>
+<div class="neon">RRT-GAMES</div>
 
-<!-- START -->
+<!-- MODE -->
 <div id="start" class="screen active">
-<h2>MODE WÄHLEN</h2>
-<button onclick="enter('kids')">🟢 KIDS MODE</button>
-<button onclick="enter('adult')">🔥 ADULT MODE</button>
+    <h2>SERVER AUSWAHL</h2>
+
+    <button onclick="enter('kids')">KIDS MODE 🟢</button>
+    <button onclick="enter('adult')">ADULT MODE 🔥</button>
 </div>
 
 <!-- MENU -->
 <div id="menu" class="screen">
-<h2 id="title"></h2>
+    <h2 id="title">MENU</h2>
 
-<div id="games"></div>
+    <button onclick="openGame('dice')">Dice Game</button>
+    <button onclick="openGame('reaction')">Reaction Game</button>
+    <button onclick="openGame('guess')">Guess Game</button>
+    <button onclick="openGame('clickrush')">Click Rush</button>
+    <button onclick="openGame('memory')">Memory Game</button>
 
-<br>
-<button onclick="backStart()">EXIT</button>
+    <br>
+    <button onclick="backStart()">Back</button>
 </div>
 
-<!-- GAME -->
-<div id="game" class="screen">
-<h2 id="gtitle"></h2>
+<!-- DICE -->
+<div id="dice" class="screen">
+    <h2>Dice Game</h2>
+    <p>Du: <span id="p">0</span> | Bot: <span id="b">0</span></p>
+    <div class="win" id="diceWin"></div>
+    <button onclick="roll()">Roll</button>
+    <button onclick="back()">Back</button>
+</div>
 
-<div class="win" id="gout">READY</div>
+<!-- REACTION -->
+<div id="reaction" class="screen">
+    <h2>Reaction Game</h2>
+    <div class="click">CLICK IMMER SICHTBAR</div>
+    <p id="txt">Start</p>
+    <div class="win" id="reactWin"></div>
+    <button id="startBtn" onclick="startR()">Start</button>
+    <button id="clickBtn" onclick="clickR()" style="display:none;">CLICK</button>
+    <button onclick="back()">Back</button>
+</div>
 
-<input id="inp" style="display:none">
+<!-- GUESS -->
+<div id="guess" class="screen">
+    <h2>Guess Game</h2>
+    <div class="win" id="guessWin"></div>
+    <input id="inp" type="number" min="1" max="10">
+    <br><br>
+    <button onclick="guess()">Check</button>
+    <button onclick="back()">Back</button>
+</div>
 
-<br>
-<button onclick="startGame()">START</button>
-<button onclick="back()">BACK</button>
+<!-- NEW GAME 1: CLICK RUSH -->
+<div id="clickrush" class="screen">
+    <h2>Click Rush</h2>
+
+    <div class="win" id="crTime">0</div>
+    <button onclick="startCR()">START</button>
+    <button onclick="clickCR()">CLICK</button>
+
+    <div class="win" id="crResult"></div>
+    <button onclick="back()">Back</button>
+</div>
+
+<!-- NEW GAME 2: MEMORY SEQUENCE -->
+<div id="memory" class="screen">
+    <h2>Memory Game</h2>
+
+    <div class="win" id="seq"></div>
+
+    <input id="memInp" placeholder="Zahl eingeben">
+    <br><br>
+
+    <button onclick="checkMem()">Check</button>
+    <button onclick="back()">Back</button>
+
+    <div class="win" id="memRes"></div>
 </div>
 
 <script>
 
-let mode="";
-let current="";
-let secret=0;
+let mode="kids";
 
 /* MODE */
 function enter(m){
-mode=m;
+    mode=m;
+    document.getElementById("start").classList.remove("active");
+    document.getElementById("menu").classList.add("active");
 
-document.body.className = (m==="adult")?"adult":"";
-
-document.getElementById("start").classList.remove("active");
-document.getElementById("menu").classList.add("active");
-
-document.getElementById("title").innerText=
-m==="kids"?"🟢 KIDS MODE":"🔥 ADULT MODE";
-
-loadGames();
+    document.getElementById("title").innerText =
+        m==="kids" ? "KIDS MODE 🟢 (EASY)" : "ADULT MODE 🔥 (HARD)";
 }
 
-/* GAMES */
-function loadGames(){
+/* NAV */
+function openGame(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
 
-let g=document.getElementById("games");
-g.innerHTML="";
-
-if(mode==="kids"){
-g.innerHTML=`
-<button onclick="openGame('dice')">Dice</button>
-<button onclick="openGame('guess')">Guess</button>
-<button onclick="openGame('memory')">Memory</button>
-<button onclick="openGame('click')">Click</button>
-<button onclick="openGame('color')">Color</button>
-<button onclick="openGame('reaction')">Reaction</button>
-`;
+    if(id==="memory") startMemory();
 }
 
-if(mode==="adult"){
-g.innerHTML=`
-<button onclick="openGame('dice')">Dice Battle</button>
-<button onclick="openGame('slot')">Slot</button>
-<button onclick="openGame('highlow')">HighLow</button>
-<button onclick="openGame('memory')">Memory+</button>
-<button onclick="openGame('click')">Speed Click</button>
-<button onclick="openGame('reaction')">Reaction Pro</button>
-<button onclick="openGame('color')">Color Rush</button>
-`;
-}
-}
-
-/* OPEN GAME */
-function openGame(g){
-current=g;
-
-document.getElementById("menu").classList.remove("active");
-document.getElementById("game").classList.add("active");
-
-document.getElementById("gtitle").innerText=g.toUpperCase();
-document.getElementById("gout").innerText="READY";
-
-document.getElementById("inp").style.display="none";
-
-if(g==="guess"){
-document.getElementById("inp").style.display="inline-block";
-resetGuess();
-}
-}
-
-/* BACK */
 function back(){
-document.getElementById("game").classList.remove("active");
-document.getElementById("menu").classList.add("active");
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('menu').classList.add('active');
 }
 
 function backStart(){
-document.getElementById("menu").classList.remove("active");
-document.getElementById("start").classList.add("active");
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById('start').classList.add('active');
 }
 
-/* START */
-function startGame(){
-
-if(current==="dice") dice();
-if(current==="slot") slot();
-if(current==="guess") guess();
-if(current==="memory") memory();
-if(current==="click") click();
-if(current==="reaction") reaction();
-if(current==="color") color();
-if(current==="highlow") highlow();
-}
+/* ---------------- 3 BASIC GAMES ---------------- */
 
 /* DICE */
 let p=0,b=0;
 
-function dice(){
-p+=Math.floor(Math.random()*6)+1;
-b+=Math.floor(Math.random()*6)+1;
+function roll(){
+    let m = mode==="adult"?2:1;
 
-document.getElementById("gout").innerText="YOU:"+p+" BOT:"+b;
+    p += (Math.random()*6|0)+1*m;
+    b += (Math.random()*6|0)+1*m;
 
-if(p>=20&&p>b)document.getElementById("gout").innerText="YOU WIN";
-if(b>=20&&b>p)document.getElementById("gout").innerText="YOU LOSE";
+    document.getElementById("p").innerText=p;
+    document.getElementById("b").innerText=b;
+
+    if(p>=20 && p>b) document.getElementById("diceWin").innerText="YOU WIN";
+    if(b>=20 && b>p) document.getElementById("diceWin").innerText="YOU LOSE";
 }
 
-/* SLOT */
-function slot(){
-
-let s=["7","🍒","⭐","💎"];
-
-let a=s[Math.random()*4|0];
-let b=s[Math.random()*4|0];
-let c=s[Math.random()*4|0];
-
-document.getElementById("gout").innerText=a+" "+b+" "+c;
-
-if(a===b&&b===c){
-document.getElementById("gout").innerText="JACKPOT";
-}else if(a===b||b===c||a===c){
-document.getElementById("gout").innerText="WIN";
-}else{
-document.getElementById("gout").innerText="LOSE";
-}
-}
-
-/* GUESS FIX */
-function resetGuess(){
-secret = mode==="adult"
-?Math.floor(Math.random()*100)+1
-:Math.floor(Math.random()*10)+1;
-}
-
-function guess(){
-let v=Number(document.getElementById("inp").value);
-
-if(!v)return;
-
-if(v===secret){
-document.getElementById("gout").innerText="CORRECT";
-resetGuess();
-}else{
-document.getElementById("gout").innerText=
-v>secret?"TOO HIGH":"TOO LOW";
-}
-}
-
-/* MEMORY */
-function memory(){
-let n=Math.floor(Math.random()*900)+100;
-
-document.getElementById("gout").innerText=n;
-
-setTimeout(()=>{
-document.getElementById("gout").innerText="???";
-},1000);
-}
-
-/* CLICK */
-let clicks=0;
-
-function click(){
-clicks++;
-document.getElementById("gout").innerText="Clicks: "+clicks;
-}
+/* RESET DICE */
+document.querySelector('[onclick="openGame(\'dice\')"]').addEventListener("click",()=>{
+    p=0;b=0;
+    document.getElementById("p").innerText=0;
+    document.getElementById("b").innerText=0;
+    document.getElementById("diceWin").innerText="";
+});
 
 /* REACTION */
-function reaction(){
-document.getElementById("gout").innerText="WAIT...";
+let ready=false,t;
 
-setTimeout(()=>{
-document.getElementById("gout").innerText="CLICK!";
-},900);
+function startR(){
+    document.getElementById("txt").innerText="Warten...";
+    document.getElementById("startBtn").style.display="none";
+
+    let delay = mode==="adult"?1500:2500;
+
+    setTimeout(()=>{
+        document.getElementById("txt").innerText="JETZT!";
+        document.getElementById("clickBtn").style.display="inline-block";
+        ready=true;
+        t=Date.now();
+    },Math.random()*delay+800);
 }
 
-/* COLOR */
-function color(){
-document.getElementById("gout").innerText=
-["red","green","blue","yellow"][Math.random()*4|0];
+function clickR(){
+    if(!ready)return;
+    let time=Date.now()-t;
+
+    document.getElementById("reactWin").innerText="Zeit: "+time+" ms";
+
+    ready=false;
+    document.getElementById("clickBtn").style.display="none";
+    document.getElementById("startBtn").style.display="inline-block";
 }
 
-/* HIGHLOW */
-function highlow(){
-let n=Math.floor(Math.random()*100);
-document.getElementById("gout").innerText="VS "+n;
+/* GUESS */
+let secret=Math.floor(Math.random()*10)+1;
+
+function guess(){
+    let v=Number(document.getElementById("inp").value);
+
+    if(v===secret){
+        document.getElementById("guessWin").innerText="RICHTIG!";
+        secret=Math.floor(Math.random()*10)+1;
+    }else{
+        document.getElementById("guessWin").innerText =
+            v>secret?"Zu hoch":"Zu niedrig";
+    }
+}
+
+/* ---------------- NEW GAME 1: CLICK RUSH ---------------- */
+let crStart;
+
+function startCR(){
+    crStart=Date.now();
+    document.getElementById("crResult").innerText="";
+}
+
+function clickCR(){
+    let t=Date.now()-crStart;
+    let limit=mode==="adult"?400:700;
+
+    document.getElementById("crResult").innerText =
+        t<limit?"FAST WIN":"TOO SLOW";
+}
+
+/* ---------------- NEW GAME 2: MEMORY SEQ ---------------- */
+let seqNum;
+
+function startMemory(){
+    seqNum = Math.floor(Math.random()*900)+100;
+
+    document.getElementById("seq").innerText=seqNum;
+
+    setTimeout(()=>{
+        document.getElementById("seq").innerText="???";
+    }, mode==="adult"?800:1500);
+}
+
+function checkMem(){
+    let v=document.getElementById("memInp").value;
+
+    document.getElementById("memRes").innerText =
+        v==seqNum?"RIGHT":"WRONG";
 }
 
 </script>
