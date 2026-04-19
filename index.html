@@ -13,14 +13,26 @@
   }
 
   button {
-    padding: 10px 15px;
-    margin: 5px;
+    padding: 12px 18px;
+    margin: 6px;
     cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    background: #333;
+    color: white;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background: #00ff88;
+    color: black;
   }
 
   .game {
     display: none;
     margin-top: 20px;
+    opacity: 0;
+    transition: 0.3s;
   }
 </style>
 
@@ -32,12 +44,15 @@
 <div id="menu">
   <h1>RRT-GAMES</h1>
 
+  <p>Highscore (Survival Wave): <span id="hs">0</span></p>
+
   <button onclick="startDice()">Dice Game</button>
   <button onclick="startReaction()">Reaction Game</button>
   <button onclick="startBoss()">Boss Game</button>
+  <button onclick="startSurvival()">Survival Mode</button>
 </div>
 
-<!-- DICE GAME -->
+<!-- DICE -->
 <div id="diceGame" class="game">
   <h2>Dice Game</h2>
 
@@ -49,7 +64,7 @@
   <button onclick="backMenu()">Back</button>
 </div>
 
-<!-- REACTION GAME -->
+<!-- REACTION -->
 <div id="reactionGame" class="game">
   <h2>Reaction Game</h2>
 
@@ -60,13 +75,22 @@
   <button onclick="backMenu()">Back</button>
 </div>
 
-<!-- BOSS GAME -->
+<!-- BOSS -->
 <div id="bossGame" class="game">
   <h2>Boss Fight</h2>
 
-  <p id="bossText">Der Boss erscheint...</p>
-  <p id="bossHp">Boss HP: 50</p>
-  <p id="playerHp">Deine HP: 30</p>
+  <p id="bossText">Fight!</p>
+  <p id="bossHp">Boss HP: 0</p>
+  <p id="playerHp">Deine HP: 0</p>
+
+  <!-- HP BARS -->
+  <div style="width:200px;height:15px;background:#333;margin:5px auto;">
+    <div id="bossBar" style="height:100%;background:red;width:100%"></div>
+  </div>
+
+  <div style="width:200px;height:15px;background:#333;margin:5px auto;">
+    <div id="playerBar" style="height:100%;background:lime;width:100%"></div>
+  </div>
 
   <button onclick="attackBoss()">Attack</button>
   <button onclick="backMenu()">Back</button>
@@ -74,32 +98,54 @@
 
 <script>
 
+/* HIGH SCORE */
+let highscore = localStorage.getItem("highscore") || 0;
+document.getElementById("hs").innerText = highscore;
+
+/* DICE */
 let player = 0;
 let cpu = 0;
 
+/* BOSS / SURVIVAL */
 let bossHp = 50;
 let playerHp = 30;
+let level = 1;
+let wave = 1;
+
+/* REACTION */
+let startTime = 0;
+let reactionActive = false;
 
 /* MENU */
 function showGame(id){
   document.getElementById("menu").style.display = "none";
   document.querySelectorAll(".game").forEach(g => g.style.display = "none");
-  document.getElementById(id).style.display = "block";
+
+  const game = document.getElementById(id);
+  game.style.display = "block";
+
+  setTimeout(() => {
+    game.style.opacity = 1;
+  }, 50);
 }
 
 function backMenu(){
-  document.querySelectorAll(".game").forEach(g => g.style.display = "none");
+  document.querySelectorAll(".game").forEach(g => {
+    g.style.display = "none";
+    g.style.opacity = 0;
+  });
+
   document.getElementById("menu").style.display = "block";
 }
 
-/* STARTS */
+/* START */
 function startDice(){ showGame("diceGame"); }
 function startReaction(){ showGame("reactionGame"); }
-function startBoss(){ showGame("bossGame"); resetBoss(); }
+function startBoss(){ showGame("bossGame"); startWave(); }
+function startSurvival(){ showGame("bossGame"); wave = 1; startWave(); }
 
 /* DICE */
 function rollDice(){
-
   const d1 = Math.floor(Math.random()*6)+1;
   const d2 = Math.floor(Math.random()*6)+1;
 
@@ -126,91 +172,98 @@ function rollDice(){
 function resetDice(){
   player = 0;
   cpu = 0;
-
-  document.getElementById("d1").innerText = "-";
-  document.getElementById("d2").innerText = "-";
   document.getElementById("score").innerText = "Score: 0 | 0";
 }
 
 /* REACTION */
-let startTime = 0;
-let reactionActive = false;
-
 function startReactionTest(){
-
   if(reactionActive) return;
 
   reactionActive = true;
+  startTime = 0;
 
-  document.getElementById("reactionText").innerText =
-    "Warte auf GRÜN...";
+  document.getElementById("reactionText").innerText = "Warte...";
 
   const delay = Math.random()*3000 + 2000;
 
   setTimeout(() => {
-    document.getElementById("reactionText").innerText =
-      "JETZT KLICKEN!";
+    if(!reactionActive) return;
+
+    document.getElementById("reactionText").innerText = "JETZT!";
     startTime = Date.now();
   }, delay);
 }
 
 function handleReactionClick(){
 
-  if(!reactionActive || startTime === 0) return;
+  if(!reactionActive){
+    document.getElementById("reactionText").innerText = "Zu früh!";
+    return;
+  }
+
+  if(startTime === 0) return;
 
   const reaction = Date.now() - startTime;
 
   document.getElementById("reactionText").innerText =
     "Zeit: " + reaction + " ms";
 
-  startTime = 0;
   reactionActive = false;
+  startTime = 0;
 }
 
-/* BOSS */
-function resetBoss(){
-  bossHp = 50;
+/* SURVIVAL / BOSS */
+function startWave(){
+  bossHp = 40 + wave * 15;
   playerHp = 30;
-  updateBossUI();
-  document.getElementById("bossText").innerText = "Der Boss erscheint...";
-}
 
-function updateBossUI(){
-  document.getElementById("bossHp").innerText = "Boss HP: " + bossHp;
-  document.getElementById("playerHp").innerText = "Deine HP: " + playerHp;
+  document.getElementById("bossText").innerText =
+    "WAVE " + wave;
+
+  updateUI();
 }
 
 function attackBoss(){
 
-  if(bossHp <= 0 || playerHp <= 0) return;
-
-  const playerDmg = Math.floor(Math.random()*6)+1;
+  const crit = Math.random() < 0.2 ? 2 : 1;
+  const playerDmg = (Math.floor(Math.random()*6)+1) * crit;
   const bossDmg = Math.floor(Math.random()*5)+1;
 
   bossHp -= playerDmg;
   playerHp -= bossDmg;
 
-  updateBossUI();
-
-  document.getElementById("bossText").innerText =
-    "Du: -" + playerDmg + " | Boss: -" + bossDmg;
-
-  checkBoss();
-}
-
-function checkBoss(){
+  updateUI();
 
   if(bossHp <= 0){
-    alert("DU HAST GEWONNEN!");
-    resetBoss();
-    backMenu();
+    wave++;
+
+    if(wave > highscore){
+      highscore = wave;
+      localStorage.setItem("highscore", highscore);
+      document.getElementById("hs").innerText = highscore;
+    }
+
+    setTimeout(startWave, 700);
   }
 
   if(playerHp <= 0){
-    alert("DU VERLOREN!");
-    resetBoss();
+    alert("VERLOREN!");
     backMenu();
   }
+}
+
+function updateUI(){
+
+  document.getElementById("bossHp").innerText = "Boss HP: " + bossHp;
+  document.getElementById("playerHp").innerText = "Deine HP: " + playerHp;
+
+  let bossMax = 40 + wave * 15;
+
+  document.getElementById("bossBar").style.width =
+    (bossHp / bossMax) * 100 + "%";
+
+  document.getElementById("playerBar").style.width =
+    (playerHp / 30) * 100 + "%";
 }
 
 </script>
